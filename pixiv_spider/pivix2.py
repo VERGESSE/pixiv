@@ -63,7 +63,10 @@ def init_img_load(path_queue0, img_queue0):
     browser.maximize_window()
     while path_queue0.empty():
         time.sleep(1)
+    i = 0
     while not path_queue0.empty():
+        i += 1
+        print("正在爬取页面:", i)
         origin_path = path_queue0.get()
         browser.get('https://www.pixiv.net'+origin_path)
         time.sleep(2)
@@ -113,6 +116,8 @@ def img_thread():
         img_url = 'https://i.pximg.net/'+'img-original/img/'+uri+'.png'
         all_task.append(img_executor.submit(load_img, img_url))
         time.sleep(0.05)
+        if img_queue.empty():
+            time.sleep(120)
 
 
 def load_img(img_url):
