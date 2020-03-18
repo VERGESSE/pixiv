@@ -63,12 +63,12 @@ def init_img_load(path_queue0, img_queue0):
     browser.maximize_window()
     while path_queue0.empty():
         time.sleep(1)
-    i = 0
+    num = 0
     while not path_queue0.empty():
-        i += 1
-        print("正在爬取页面:", i)
-        origin_path = path_queue0.get()
-        browser.get('https://www.pixiv.net'+origin_path)
+        num += 1
+        print("正在爬取页面:", num)
+        origin_path0 = path_queue0.get()
+        browser.get('https://www.pixiv.net'+origin_path0)
         time.sleep(2)
         for i in range(1, 10):
             browser.execute_script("window.scrollTo(0,document.body.scrollHeight)")
