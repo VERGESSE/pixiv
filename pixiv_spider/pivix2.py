@@ -23,7 +23,7 @@ chrome_options.add_argument('--disable-gpu')
 # chrome_options.add_argument("blink-settings=imagesEnabled=false")
 
 work_executor = ThreadPoolExecutor(max_workers=1)
-img_executor = ThreadPoolExecutor(max_workers=120)
+img_executor = ThreadPoolExecutor(max_workers=66)
 path_queue = Queue()
 img_queue = Queue()
 all_task = []
@@ -90,42 +90,34 @@ def init_img_load(path_queue0, img_queue0):
                 uri = re.findall("^.*?img/(.*?_p0).*?", img_url)[0]
             except:
                 continue
-
             img_queue0.put(uri)
-        time.sleep(2)
     browser.close()
 
 
 
 def img_thread():
     i = 0
-    while img_queue.empty():
-        time.sleep(1)
-    while not img_queue.empty():
+    while True:
         i += 1
-        if i == 100:
-            i = 0
+        if i % 500 == 0:
             # 清理一次图片
             img_filter("E:\Python\pixiv\pixiv_spider\images")
+        if i > 30000:
+            break
 
+        while img_queue.empty():
+            time.sleep(1)
         uri = img_queue.get()
-        img_url = 'https://i.pximg.net/'+'img-original/img/'+uri+'.jpg'
-        print('正在爬取: '+img_url)
-        all_task.append(img_executor.submit(load_img, img_url))
 
-        img_url = 'https://i.pximg.net/'+'img-original/img/'+uri+'.png'
-        all_task.append(img_executor.submit(load_img, img_url))
-        time.sleep(0.05)
-        if img_queue.empty():
-            time.sleep(120)
+        all_task.append(img_executor.submit(load_img, uri))
+        time.sleep(0.1)
 
 
-def load_img(img_url):
-    img_id = img_url[57:65]
-    # print(img_id)
-    fileName = "images/"+img_url.split('/')[-1]
+def load_img(img_uri):
+    img_id = img_uri.split("/")[-1][:8]
+    file_name = "images/"+img_id+".jpg"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
         "Accept": "*/*",
         "Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",
         "Accept-Encoding": "",
@@ -136,16 +128,27 @@ def load_img(img_url):
     num = re.findall('.*?bookmarkCount":(.*?),".*?', html)[0]
     if int(num) > 3000:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
             "Accept": "*/*",
             "Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",
             "Accept-Encoding": "",
             "Connection": "keep-alive",
             'Referer': 'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+img_id
         }
+        img_url = 'https://i.pximg.net/'+'img-original/img/'+img_uri+'.jpg'
         response = requests.get(img_url, headers=headers)
-        with open(fileName, 'wb') as f:
+        print(img_url+' 爬取完成！')
+        with open(file_name, 'wb') as f:
             f.write(response.content)
+
+        if os.path.getsize(file_name) < 200:
+            os.remove(file_name)
+            img_url = 'https://i.pximg.net/'+'img-original/img/'+img_uri+'.png'
+            response = requests.get(img_url, headers=headers)
+            print(img_url+' 爬取完成！')
+            with open(file_name, 'wb') as f:
+                f.write(response.content)
+
 
 
 # "E:\Python\pixiv\pixiv_spider\images"
@@ -191,8 +194,8 @@ if __name__ == '__main__':
     origin_path = input("请输入你要爬取的初始页: \n")
     init_load(origin_path)
 
-    p = Process(target=init_img_load, args=(path_queue, img_queue))
-    p.start()
+    init_img = Process(target=init_img_load, args=(path_queue, img_queue))
+    init_img.start()
     result = work_executor.submit(img_thread)
     result.result()
     time.sleep(30)
