@@ -20,7 +20,7 @@ chrome_options.add_argument("--user-data-dir="+chrome_path)
 chrome_options.add_experimental_option("excludeSwitches", ["ignore-certificate-errors"])
 chrome_options.add_argument('--disable-gpu')
 # 设置不加载图片模式
-# chrome_options.add_argument("blink-settings=imagesEnabled=false")
+chrome_options.add_argument("blink-settings=imagesEnabled=false")
 
 work_executor = ThreadPoolExecutor(max_workers=1)
 img_executor = ThreadPoolExecutor(max_workers=66)
@@ -137,17 +137,19 @@ def load_img(img_uri):
         }
         img_url = 'https://i.pximg.net/'+'img-original/img/'+img_uri+'.jpg'
         response = requests.get(img_url, headers=headers)
-        print(img_url+' 爬取完成！')
+
         with open(file_name, 'wb') as f:
             f.write(response.content)
+        print(img_url+' 爬取完成！')
 
         if os.path.getsize(file_name) < 200:
             os.remove(file_name)
             img_url = 'https://i.pximg.net/'+'img-original/img/'+img_uri+'.png'
             response = requests.get(img_url, headers=headers)
-            print(img_url+' 爬取完成！')
+
             with open(file_name, 'wb') as f:
                 f.write(response.content)
+            print(img_url+' 爬取完成！')
 
 
 
